@@ -64,7 +64,30 @@ Object.freeze(MORSE_CODE);
  * @param {string} morseCode The string to decode.
  */
 function decodeMorse(morseCode) {
-  // Your code should go here.
+  var chars = morseCode.split('');
+  var morseString = '';
+
+  for (var i = 0; i < chars.length; i++) {
+    if (chars[i] === "") {
+      morseString += " ";
+    } else {
+      morseString += chars[i];
+    }
+  }
+  morseString = morseString.split(' ');
+
+  var finalString = '';
+  morseString.forEach(morse => {
+    if (morse !== '') {
+      finalString += MORSE_CODE[morse];
+    } else {
+      finalString += " ";
+    }
+
+  })
+
+  finalString = finalString.replace(/\s\s+/g, ' ');
+  return finalString.trim();
 }
 
 module.exports = decodeMorse;
