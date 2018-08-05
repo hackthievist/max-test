@@ -6,34 +6,36 @@
 
 const dateFormat = require("dateformat");
 
+//function to get the date/age of the students
+var getDate = (date = null) => {
+  if (date !== null) {
+    var date = new Date(date);
+    var day = new Date(date).getUTCDate();
+    var month = new Date(date).getUTCMonth();
+    var year = new Date(date).getUTCFullYear();
+    var readableDate = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    return {
+      day,
+      month,
+      year,
+      readableDate
+    };
+  } else {
+    return {
+      day: new Date().getUTCDate(),
+      month: new Date().getUTCMonth(),
+      year: new Date().getUTCFullYear(),
+      readableDate: dateFormat(new Date(), "dddd, mmmm dS, yyyy, h:MM:ss TT")
+    };
+  }
+};
+
 function classifier(input) {
+  //intializing the sorted object
   var obj = {};
   obj['noOfGroups'] = 0;
+
   if (input.length !== 0) {
-
-    var getDate = (date = null) => {
-      if (date !== null) {
-        var date = new Date(date);
-        var day = new Date(date).getUTCDate();
-        var month = new Date(date).getUTCMonth();
-        var year = new Date(date).getUTCFullYear();
-        var readableDate = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
-        return {
-          day,
-          month,
-          year,
-          readableDate
-        };
-      } else {
-        return {
-          day: new Date().getUTCDate(),
-          month: new Date().getUTCMonth(),
-          year: new Date().getUTCFullYear(),
-          readableDate: dateFormat(new Date(), "dddd, mmmm dS, yyyy, h:MM:ss TT")
-        };
-      }
-    };
-
     var studentArray = [];
     var arr = [];
     input.forEach(student => {
@@ -59,7 +61,6 @@ function classifier(input) {
       return a.age - b.age;
     });
 
-    var obj = {};
     var student = [];
     var length = studentArray.length;
     var array = [student[0]];
@@ -99,29 +100,24 @@ function classifier(input) {
         groupName = "group" + (i + 1);
         obj[groupName] = {};
         obj[groupName]["members"] = arrays[i];
-        sum += arrays[i][0].age;
+
+        for (k = 0; k < 3; k++) {
+          if (arrays[i][k] !== undefined) {
+            sum += arrays[i][k].age;
+          }
+        }
+
         var length = arrays[i][3];
-        if (arrays[i][1] !== undefined) {
-          sum += arrays[i][1].age;
-        }
-        if (arrays[i][2] !== undefined) {
-          sum += arrays[i][2].age;
-        }
+
         var oldest = arrays[i][arrays[i].length - 1].age;
 
         obj[groupName]["oldest"] = oldest;
         obj[groupName]["sum"] = sum;
-        //regNos = arrays[i][0].regNo, arrays[i][1].regNo, arrays[i][2].regNo;
-        if (arrays[i][0]) {
-          regNos.push(parseInt(arrays[i][0].regNo));
-        }
 
-        if (arrays[i][1]) {
-          regNos.push(parseInt(arrays[i][1].regNo));
-        }
-
-        if (arrays[i][2]) {
-          regNos.push(parseInt(arrays[i][2].regNo));
+        for (j = 0; j < 3; j++) {
+          if (arrays[i][j]) {
+            regNos.push(parseInt(arrays[i][j].regNo));
+          }
         }
 
         regNos.sort((a, b) => {
@@ -129,13 +125,12 @@ function classifier(input) {
         })
         obj[groupName]['regNos'] = regNos;
 
-
+        //clear regNos array for next student array.
         regNos = [];
 
+        //resets the sum to 0 after calculating the sum for each array
         sum = 0;
       }
-    } else {
-      obj['noOfGroups'] = 0;
     }
   }
   return obj;
