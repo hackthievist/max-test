@@ -4,48 +4,27 @@
  * @param {array} input Array of student objects
  */
 
-const dateFormat = require("dateformat");
-
-//function to get the date/age of the students
-var getDate = (date = null) => {
-  if (date !== null) {
-    var date = new Date(date);
-    var day = new Date(date).getUTCDate();
-    var month = new Date(date).getUTCMonth();
-    var year = new Date(date).getUTCFullYear();
-    var readableDate = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
-    return {
-      day,
-      month,
-      year,
-      readableDate
-    };
-  } else {
-    return {
-      day: new Date().getUTCDate(),
-      month: new Date().getUTCMonth(),
-      year: new Date().getUTCFullYear(),
-      readableDate: dateFormat(new Date(), "dddd, mmmm dS, yyyy, h:MM:ss TT")
-    };
-  }
-};
-
 function classifier(input) {
-  //intializing the sorted object
-  var obj = {};
-  obj['noOfGroups'] = 0;
+  //intializing the output object
+  var output = {};
+
+  //setting the number of groups to 0 for empty input arrays.
+  output["noOfGroups"] = 0;
 
   if (input.length !== 0) {
+    //execute this block if input array is not empty
     var studentArray = [];
     var arr = [];
-    input.forEach(student => {
-      var studentBirthDate = getDate(student.dob);
-      var today = getDate();
-      var dayDifference = today.day - studentBirthDate.day;
-      var monthDifference = today.month - studentBirthDate.month;
-      var age;
+    var studentBirthYear;
+    var currentYear;
+    var age;
 
-      age = today.year - studentBirthDate.year;
+    input.map(student => {
+      //mutate the original array creating an object for each student
+      studentBirthYear = new Date(student.dob).getUTCFullYear();
+      currentYear = new Date().getUTCFullYear();
+
+      age = currentYear - studentBirthYear;
 
       var studentOutput = {
         name: student.name,
@@ -61,79 +40,63 @@ function classifier(input) {
       return a.age - b.age;
     });
 
-    var student = [];
-    var length = studentArray.length;
-    var array = [student[0]];
-    var arrays = [];
+    var arrays = []; //array for all students
+    var allAgeArray = []; //an array for all student ages
+    var regNos = []; //array for all regNos
 
     if (input.length !== 0) {
+      var array = [studentArray[0]];
+      var ageArray = [studentArray[0].age];
+      var regNo = [parseInt(studentArray[0].regNo)];
 
-      for (i = 1; i <= length; i++) {
-        var min = studentArray.reduce((acc, cur) => (acc.age <= cur.age ? acc : cur));
-        student.push(min);
-        studentArray.splice(studentArray.indexOf(min), 1);
-      }
-
-      var array = [student[0]];
-
-      for (k = 1; k < student.length; k++) {
-        if (Math.abs(student[k].age - array[0].age) <= 5 && array.length < 3) {
-          array.push(student[k]);
+      for (k = 1; k < studentArray.length; k++) {
+        if (
+          Math.abs(studentArray[k].age - array[0].age) <= 5 &&
+          array.length < 3
+        ) {
+          //push the students, ages and regNos into different arrays for readability and better manipulation
+          array.push(studentArray[k]);
+          ageArray.push(studentArray[k].age);
+          regNo.push(parseInt(studentArray[k].regNo));
         } else {
           arrays.push(array);
-          array = [student[k]];
+          allAgeArray.push(ageArray);
+          regNos.push(regNo);
+          array = [studentArray[k]];
+          ageArray = [studentArray[k].age];
+          regNo = [parseInt(studentArray[k].regNo)];
         }
       }
       arrays.push(array);
-
-      arrays.sort((a, b) => {
-        return a.dob - b.dob;
-      })
+      allAgeArray.push(ageArray);
+      regNos.push(regNo);
 
       var groupName;
+      output["noOfGroups"] = arrays.length;
 
-      obj["noOfGroups"] = arrays.length;
-      var sum = 0;
-      var regNos = [];
+      ///reduce function to add the sum of items in a given array [the agesArray]
+      var reducer = (a, b) => a + b;
 
       for (var i = 0; i < arrays.length; i++) {
-        groupName = "group" + (i + 1);
-        obj[groupName] = {};
-        obj[groupName]["members"] = arrays[i];
+        arrays.forEach(student => {
+          groupName = "group" + (i + 1);
 
-        for (k = 0; k < 3; k++) {
-          if (arrays[i][k] !== undefined) {
-            sum += arrays[i][k].age;
-          }
-        }
+          output[groupName] = {};
+          output[groupName]["members"] = arrays[i];
+          output[groupName]["sum"] = 0;
+          output[groupName]["sum"] += allAgeArray[i].reduce(reducer);
+          output[groupName]["oldest"] = Math.max(...allAgeArray[i]);
+          output[groupName]["regNos"] = regNos[i];
 
-        var length = arrays[i][3];
-
-        var oldest = arrays[i][arrays[i].length - 1].age;
-
-        obj[groupName]["oldest"] = oldest;
-        obj[groupName]["sum"] = sum;
-
-        for (j = 0; j < 3; j++) {
-          if (arrays[i][j]) {
-            regNos.push(parseInt(arrays[i][j].regNo));
-          }
-        }
-
-        regNos.sort((a, b) => {
-          return a - b;
-        })
-        obj[groupName]['regNos'] = regNos;
-
-        //clear regNos array for next student array.
-        regNos = [];
-
-        //resets the sum to 0 after calculating the sum for each array
-        sum = 0;
+          //sort the regNos array
+          output[groupName]["regNos"].sort((a, b) => {
+            return a - b;
+          });
+        });
       }
     }
   }
-  return obj;
+  return output;
 }
 
 module.exports = classifier;
